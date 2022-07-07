@@ -1,5 +1,7 @@
+const db = require("../db");
+const { UnauthorizedError } = require("../utils/errors");
 class User {
-  static async login() {
+  static async login(credentials) {
     //Get the user's email
     //Get the user's name
     //Get the users password
@@ -14,7 +16,7 @@ class User {
     //Error
   }
 
-  static async register() {
+  static async register(credentials) {
     //Get users name
     //Get users username and check if there is no same username in db
     //Get users email and check if there is no same email in db
