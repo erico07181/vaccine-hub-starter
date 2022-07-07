@@ -1,40 +1,69 @@
+const { UnauthorizedError, BadRequestError } = require("../utils/errors");
+const bcrypt = require("bcrypt");
+const { BCRYPT_WORK_FACTOR } = require("../config");
 const db = require("../db");
-const { UnauthorizedError } = require("../utils/errors");
 class User {
-  static async login(credentials) {
-    //Get the user's email
-    //Get the user's name
-    //Get the users password
-    //Check if the user email is a valid user email
-    //If yes,
-    //Check if the password provied by the user matches the password in the database
-    //If not
-    //Error
-    //else
-    //login
-    //If not,
-    //Error
+  static async makePublicUser(user) {
+    return {
+      id: user.id,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      email: user.email,
+      date: user.date,
+    };
   }
-
-  static async register(credentials) {
-    //Get users name
-    //Get users username and check if there is no same username in db
-    //Get users email and check if there is no same email in db
-    //Ask for a password
-    //Hash password
+  static async login(credentials) {
     const requiredFields = ["email", "password"];
+
     requiredFields.forEach((field) => {
       if (!credentials.hasOwnProperty(field)) {
-        throw new UnauthorizedError(`Missin ${field} in request body`);
+        throw new BadRequestError(`Missing ${field} in request body.`);
       }
     });
 
-    const existingUser = await User.fetchUserByEmail(credentials.email);
-    if (existingUser) {
-      throw new UnauthorizedError(`User already exists: ${credentials.email}`);
+    const user = await User.fetchUserByEmail(credentials.email);
+
+    if (user) {
+      const isValid = await bcrypt.compare(credentials.password, user.password);
+      if (isValid) {
+        return User.makePublicUser(user);
+      }
     }
 
+    throw new UnauthorizedError("Invalid email/password");
+  }
+
+  static async register(credentials) {
+    //user should submit their email and pw
+    //If any of these fields are missing, throw an error
+    const requiredFields = [
+      "first_name",
+      "last_name",
+      "location",
+      "email",
+      "password",
+    ];
+
+    requiredFields.forEach((field) => {
+      if (!credentials.hasOwnProperty(field)) {
+        throw new BadRequestError(`Missing ${field} in request body...`);
+      }
+    });
+
+    //make sure no user already exists in the database with that email
+    //if one does, throw an error
+    const existingUser = await User.fetchUserByEmail(credentials.email);
+    if (existingUser) {
+      throw new BadRequestError("Duplicate email: ", credentials.email);
+    }
+    //take the user's password and hash it
+    //take hte user's email and lowercase it
     const lowercasedEmail = credentials.email.toLowerCase();
+    //create a new user with in the db with their info
+    const hashedPassword = await bcrypt.hash(
+      credentials.password,
+      BCRYPT_WORK_FACTOR
+    );
 
     const result = await db.query(
       `
@@ -56,21 +85,21 @@ class User {
         hashedPassword,
       ]
     );
+    //return the user
     const user = result.rows[0];
     return user;
   }
 
   static async fetchUserByEmail(email) {
     if (!email) {
-      throw new UnauthorizedError("No email provided");
+      throw new BadRequestError("No email provided");
     }
 
-    const query = `SELECT * FROM users WHERE email = $1`;
-
+    const query = "SELECT * FROM users WHERE email = $1";
     const result = await db.query(query, [email.toLowerCase()]);
-
     const user = result.rows[0];
-
     return user;
   }
 }
+
+module.exports = User;
