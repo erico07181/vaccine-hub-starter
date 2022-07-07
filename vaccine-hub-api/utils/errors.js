@@ -6,7 +6,25 @@ class ExpressError extends Error {
   }
 }
 
-class NotFoundError extends ExpressError {
+class BadRequestError extends Error {
+  constructor(message = "Bad Request") {
+    super(message, 400);
+  }
+}
+
+class UnauthorizedError extends Error {
+  constructor(message = "Unauthorized") {
+    super(message, 401);
+  }
+}
+
+class ForbiddenError extends Error {
+  constructor(message = "Forbidden") {
+    super(message, 403);
+  }
+}
+
+class NotFoundError extends Error {
   constructor(message = "Not Found") {
     super(message, 404);
   }
@@ -14,5 +32,8 @@ class NotFoundError extends ExpressError {
 
 module.exports = {
   ExpressError,
+  BadRequestError,
+  UnauthorizedError,
+  ForbiddenError,
   NotFoundError,
 };

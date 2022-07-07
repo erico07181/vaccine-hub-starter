@@ -42,6 +42,7 @@ class User {
       "location",
       "email",
       "password",
+      "date",
     ];
 
     requiredFields.forEach((field) => {
@@ -72,9 +73,10 @@ class User {
         last_name,
         email,
         location,
-        password
+        password,
+        date
     )
-    VALUES ($1,$2,$3,$4,$5)
+    VALUES ($1,$2,$3,$4,$5,$6)
     RETURNING id,first_name,last_name,email,location,date;
     `,
       [
@@ -83,6 +85,7 @@ class User {
         lowercasedEmail,
         credentials.location,
         hashedPassword,
+        credentials.date,
       ]
     );
     //return the user
